@@ -1,0 +1,6 @@
+﻿eel>=0.16.0
+winsdk>=1.0.0b10; sys_platform == "win32"
+bottle-websocket>=0.2.9
+gevent>=23.9.0
+gevent-websocket>=0.10.1
+pyinstaller>=6.0.0

@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Yeshiva Connect</title>
+    <link rel="icon" type="image/x-icon" href="icon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="icon.ico">
+    <script type="text/javascript" src="/eel.js"></script>
+    <script type="text/javascript" src="jszip.min.js"></script>
+    <script type="text/javascript" src="qrcode.min.js"></script>
+    <script type="text/javascript" src="jsQR.min.js"></script>
+    <link rel="stylesheet" href="fonts/assistant.css">
+    <link rel="stylesheet" href="fontawesome.css">
+    <style>
+        :root {
+            --bg-color: #0b1120;
+            --bg-gradient-1: #1e293b;
+            --glass-bg: rgba(30, 41, 59, 0.72);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --sidebar-bg: rgba(15, 23, 42, 0.9);
+            --input-bg: rgba(255,255,255,0.06);
+            --hover-bg: rgba(255,255,255,0.11);
+            --card-bg: rgba(255,255,255,0.04);
+            --card-hover: rgba(255,255,255,0.09);
+            --divider: rgba(255,255,255,0.10);
+            --badge-bg: rgba(0,0,0,0.28);
+            --incoming-bubble: rgba(51, 65, 85, 0.7);
+            --shadow-lg: 0 24px 60px rgba(0,0,0,0.45);
+            --shadow-panel: -14px 0 40px rgba(0,0,0,0.28);
+            --accent-glow: 0 6px 20px rgba(56,189,248,0.35);
+        }
+
+        body.light {
+            --bg-color: #e7edf5;
+            --bg-gradient-1: #ffffff;
+            --glass-bg: rgba(255, 255, 255, 0.9);
+            --glass-border: rgba(15, 23, 42, 0.12);
+            --primary: #0284c7;
+            --secondary: #6366f1;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --sidebar-bg: rgba(255, 255, 255, 0.82);
+            --input-bg: rgba(15,23,42,0.05);
+            --hover-bg: rgba(15,23,42,0.09);
+            --card-bg: rgba(255,255,255,0.75);
+            --card-hover: #ffffff;
+            --divider: rgba(15,23,42,0.12);
+            --badge-bg: rgba(15,23,42,0.06);
+            --incoming-bubble: #ffffff;
+            --shadow-lg: 0 24px 60px rgba(100,116,139,0.28);
+            --shadow-panel: -14px 0 40px rgba(100,116,139,0.16);
+            --accent-glow: 0 6px 20px rgba(2,132,199,0.28);
+        }
+        
+        body {
+            margin: 0; padding: 0; height: 100vh;
+            font-family: 'Assistant', sans-serif;
+            background: radial-gradient(circle at top right, var(--bg-gradient-1), var(--bg-color));
+            color: var(--text-main);
+            display: flex;
+            overflow: hidden;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* סרגל עליון */
+        .topbar {
+            position: absolute; top: 0; left: 0; right: 0; height: 70px;
+            background: var(--glass-bg); backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--divider);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 30px; z-index: 10;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+        }
+        .topbar .logo { font-size: 24px; font-weight: 800; color: var(--primary); letter-spacing: 0.3px; }
+        .network-controls { display: flex; align-items: center; gap: 12px; }
+        .status-badge {
+            background: var(--badge-bg); color: var(--text-muted);
+            padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
+            border: 1px solid var(--divider);
+        }
+        .btn-hotspot {
+            background: linear-gradient(135deg, var(--primary), var(--secondary)); border: none; color: white;
+            padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: 700; font-family: 'Assistant';
+            transition: transform 0.2s, box-shadow 0.2s; box-shadow: var(--accent-glow);
+        }
+        .btn-hotspot:hover { transform: translateY(-1px) scale(1.03); }
+        .btn-secondary {
+            background: var(--input-bg); border: 1px solid var(--glass-border); color: var(--text-main);
+            padding: 10px 16px; border-radius: 12px; cursor: pointer; font-weight: 600; font-family: 'Assistant';
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .btn-secondary:hover { background: var(--hover-bg); border-color: var(--primary); color: var(--primary); }
+
+        /* אזור ראשי */
+        .container { display: flex; width: 100%; margin-top: 70px; height: calc(100vh - 70px); }
+
+        /* תפריט צד (אנשי קשר) */
+        .sidebar {
+            width: 310px; background: var(--sidebar-bg); backdrop-filter: blur(14px);
+            border-inline-start: 1px solid var(--divider);
+            box-shadow: var(--shadow-panel);
+            display: flex; flex-direction: column; z-index: 5;
+        }
+        .sidebar-header {
+            padding: 18px 20px; font-size: 17px; font-weight: 700;
+            border-bottom: 1px solid var(--divider);
+        }
+        .contact-list { flex: 1; overflow-y: auto; padding: 12px; }
+        .contact-item {
+            background: var(--card-bg); border: 1px solid var(--divider); padding: 14px 16px;
+            border-radius: 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s;
+        }
+        .contact-item:hover { background: var(--card-hover); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
+        .contact-item.active {
+            background: var(--hover-bg);
+            background: color-mix(in srgb, var(--primary) 14%, transparent);
+            border-color: var(--primary);
+        }
+        .contact-name { font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
+        .contact-name::before {
+            content: ''; width: 9px; height: 9px; border-radius: 50%;
+            background: var(--primary); box-shadow: 0 0 8px var(--primary); flex: none;
+        }
+        .contact-ip { font-size: 13px; color: var(--text-muted); }
+
+        .add-contact-btn {
+            margin: 16px 20px 20px; background: var(--input-bg); border: 1px dashed var(--text-muted);
+            color: var(--text-main); padding: 12px; border-radius: 12px; cursor: pointer;
+            font-family: 'Assistant'; font-weight: 600; transition: all 0.2s;
+        }
+        .add-contact-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--hover-bg); }
+
+        /* אזור הצ'אט */
+        .chat-area { flex: 1; display: flex; flex-direction: column; position: relative; }
+        .chat-header {
+            padding: 20px 30px; font-size: 20px; font-weight: 700;
+            border-bottom: 1px solid var(--divider);
+        }
+        .chat-messages { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+
+        /* בועות צ'אט מודרניות */
+        .msg-row { display: flex; width: 100%; }
+        .msg-row.outgoing { justify-content: flex-start; } /* User is right (RTL), so flex-start in RTL is right */
+        .msg-row.incoming { justify-content: flex-end; }
+
+        .bubble {
+            max-width: 62%; padding: 12px 18px; border-radius: 18px; line-height: 1.5; position: relative; font-size: 15px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+        }
+        .outgoing .bubble { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-bottom-right-radius: 4px; }
+        .incoming .bubble { background: var(--incoming-bubble); border: 1px solid var(--glass-border); color: var(--text-main); border-bottom-left-radius: 4px; }
+
+        .time-badge { font-size: 11px; opacity: 0.7; margin-top: 5px; display: block; text-align: left; }
+
+        /* קבצים ולינקים בתוך בועות */
+        .file-link { color: #fff; text-decoration: underline; cursor: pointer; font-weight: 600; }
+        .incoming .file-link { color: var(--primary); }
+        .folder-btn { display: inline-block; margin-top: 8px; font-size: 12px; background: rgba(0,0,0,0.2); padding: 4px 10px; border-radius: 10px; cursor: pointer; }
+        .incoming .folder-btn { background: var(--hover-bg); }
+
+        /* אזור הקלדה */
+        .input-area {
+            padding: 18px 30px; background: var(--glass-bg); backdrop-filter: blur(14px);
+            border-top: 1px solid var(--divider);
+            display: flex; gap: 12px; align-items: center;
+        }
+        .drop-hint {
+            display: none; position: absolute; inset: 0; background: var(--glass-bg); backdrop-filter: blur(6px);
+            border: 2px dashed var(--primary); color: var(--text-main);
+            align-items: center; justify-content: center; font-size: 18px; font-weight: 700; z-index: 20;
+        }
+        .drop-hint.active { display: flex; }
+        .text-input {
+            flex: 1; background: var(--input-bg); border: 1px solid var(--glass-border);
+            color: var(--text-main); padding: 15px 20px; border-radius: 20px; font-family: 'Assistant'; font-size: 15px; outline: none;
+        }
+        .text-input:focus { border-color: var(--primary); }
+        .action-btn { background: var(--input-bg); border: none; color: var(--text-main); width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 18px; transition: 0.2s; }
+        .action-btn:hover { background: var(--hover-bg); color: var(--primary); }
+        .send-btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff; }
+        .send-btn:hover { filter: brightness(1.1); color: #fff; }
+
+        /* סטטוס העברה */
+        .progress-container { position: absolute; bottom: 90px; left: 30px; right: 30px; background: var(--glass-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); display: none; }
+        .progress-text { font-size: 14px; margin-bottom: 8px; color: var(--primary); font-weight: 600; }
+        .progress-bar-bg { width: 100%; height: 6px; background: var(--input-bg); border-radius: 3px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); width: 0%; transition: width 0.2s; }
+
+        /* סנאקבר להתראות */
+        #snackbar { visibility: hidden; min-width: 250px; background-color: var(--primary); color: #000; text-align: center; border-radius: 10px; padding: 16px; position: fixed; z-index: 100; left: 50%; bottom: 30px; font-weight: 600; font-size: 15px; transform: translateX(-50%); box-shadow: var(--shadow-lg); }
+        #snackbar.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+        /* גלילה מותאמת */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--hover-bg); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* מודאלים */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--glass-bg); border: 1px solid var(--glass-border); backdrop-filter: blur(20px);
+            border-radius: 18px; padding: 28px; width: 440px; max-width: 90vw; max-height: 88vh; overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+        }
+        .modal h2 { margin: 0 0 20px; font-size: 22px; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+        .modal-close { float: left; background: none; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer; }
+        .modal-close:hover { color: var(--text-main); }
+        .form-row { margin-bottom: 18px; }
+        .form-row label { display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-muted); font-weight: 600; }
+        .form-row input[type="text"], .form-row input[type="password"] {
+            width: 100%; box-sizing: border-box; background: var(--input-bg); border: 1px solid var(--glass-border);
+            color: var(--text-main); padding: 11px 14px; border-radius: 10px; font-family: 'Assistant'; font-size: 14px; outline: none;
+        }
+        .form-row input:focus { border-color: var(--primary); }
+        .form-inline { display: flex; gap: 8px; align-items: center; }
+        .form-inline input { flex: 1; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); border: none; color: white; padding: 11px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; font-family: 'Assistant'; font-size: 14px; }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-mini { background: var(--input-bg); border: 1px solid var(--glass-border); color: var(--text-main); padding: 10px 14px; border-radius: 10px; cursor: pointer; font-family: 'Assistant'; font-size: 14px; white-space: nowrap; }
+        .btn-mini:hover { background: var(--hover-bg); }
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background: rgba(128,128,128,0.4); border-radius: 26px; transition: 0.3s; }
+        .slider:before { content: ""; position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
+        .switch input:checked + .slider { background: var(--primary); }
+        .switch input:checked + .slider:before { transform: translateX(24px); }
+
+        /* QR + מצלמה */
+        #qr-canvas-wrap { display: flex; justify-content: center; padding: 16px; background: #fff; border-radius: 12px; margin-bottom: 16px; }
+        .hotspot-detail { font-size: 15px; margin: 6px 0; }
+        .hotspot-detail b { color: var(--primary); }
+        #camera-video { width: 100%; border-radius: 12px; background: #000; max-height: 320px; object-fit: cover; }
+        #camera-status { text-align: center; margin-top: 12px; color: var(--text-muted); font-size: 14px; }
+
+        /* כפתור שמירת קובץ שהתקבל */
+        .save-file-btn { display: inline-block; margin-top: 8px; margin-right: 6px; font-size: 12px; background: var(--primary); color: #000; padding: 4px 12px; border-radius: 10px; cursor: pointer; font-weight: 600; }
+        .saved-badge { display: inline-block; margin-top: 8px; font-size: 12px; color: #34d399; font-weight: 600; }
+
+        /* שיתוף בדפדפן */
+        .share-url-box { display: flex; gap: 8px; align-items: center; background: var(--input-bg); border: 1px solid var(--glass-border); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; }
+        .share-url-box .url { flex: 1; font-family: monospace; font-size: 15px; color: var(--primary); word-break: break-all; direction: ltr; text-align: left; }
+        .share-status-line { font-size: 14px; margin-bottom: 14px; }
+        .share-status-line .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-inline-end: 7px; vertical-align: middle; }
+        .share-status-line .dot.on { background: #34d399; box-shadow: 0 0 8px #34d399; }
+        .share-status-line .dot.off { background: var(--text-muted); }
+        .share-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--card-bg); border: 1px solid var(--divider); border-radius: 12px; padding: 10px 14px; margin-bottom: 8px; }
+        .share-item .si-name { font-weight: 600; word-break: break-all; }
+        .share-item .si-size { font-size: 12px; color: var(--text-muted); }
+        .share-item .si-remove { background: none; border: none; color: #f87171; cursor: pointer; font-size: 16px; flex: none; }
+        .share-empty { color: var(--text-muted); text-align: center; padding: 16px 6px; font-size: 14px; }
+        #share-qr-wrap { display: flex; justify-content: center; padding: 14px; background: #fff; border-radius: 12px; margin: 14px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="topbar">
+        <div class="logo"><i class="fa-solid fa-wifi"></i> YeshivaConnect</div>
+        <div class="network-controls">
+            <div class="status-badge" id="my-name-badge">שם: לא נטען</div>
+            <div class="status-badge" id="net-status">מצב רשת: לא מחובר</div>
+            <button class="btn-secondary" onclick="openCameraModal()"><i class="fa-solid fa-camera"></i> סרוק ברקוד</button>
+            <button class="btn-secondary" onclick="openHotspotModal()"><i class="fa-solid fa-qrcode"></i> הצג QR</button>
+            <button class="btn-secondary" onclick="openWebShareModal()"><i class="fa-solid fa-globe"></i> שיתוף בדפדפן</button>
+            <button class="btn-secondary" onclick="openSettingsModal()"><i class="fa-solid fa-gear"></i> הגדרות</button>
+            <button class="btn-hotspot" onclick="startHotspot()"><i class="fa-solid fa-satellite-dish"></i> הפעל נקודה חמה</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="drop-hint" id="drop-hint">שחרר קובץ או תיקייה כאן</div>
+        <div class="chat-area">
+            <div class="chat-header" id="chat-header">בחר מחשב כדי להתחיל שיחה</div>
+            
+            <div class="chat-messages" id="chat-messages">
+                </div>
+
+            <div class="progress-container" id="progress-container">
+                <div class="progress-text" id="progress-text">שולח קובץ... 0%</div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-bar"></div></div>
+            </div>
+
+            <div class="input-area">
+                <input type="text" class="text-input" id="msg-input" placeholder="הקלד הודעה או קישור..." onkeypress="handleEnter(event)">
+                <button class="action-btn send-btn" title="שלח" onclick="sendText()"><i class="fa-solid fa-paper-plane"></i></button>
+                <button class="action-btn" title="שלח קובץ" onclick="openFilePicker()"><i class="fa-solid fa-file"></i></button>
+                <button class="action-btn" title="שלח תיקייה" onclick="openFolderPicker()"><i class="fa-solid fa-folder"></i></button>
+                <button class="action-btn" title="שלח פינג" onclick="sendPing()"><i class="fa-solid fa-bell"></i></button>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>מחשבים מחוברים</span>
+                <button class="btn-mini" style="padding:6px 10px;" title="רענן מכשירים מחוברים לנקודה חמה" onclick="refreshConnectedDevices()"><i class="fa-solid fa-rotate"></i></button>
+            </div>
+            <div class="contact-list" id="contact-list">
+                </div>
+            <button class="add-contact-btn" onclick="addManualContact()">+ הוסף מחשב ידנית</button>
+        </div>
+    </div>
+
+    <div id="snackbar">Some text some message..</div>
+    <input type="file" id="file-input" style="display:none" />
+    <input type="file" id="folder-input" style="display:none" webkitdirectory directory multiple />
+
+    <!-- מודאל הגדרות -->
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal('settings-modal')">&times;</button>
+            <h2><i class="fa-solid fa-gear"></i> הגדרות</h2>
+
+            <div class="form-row">
+                <label>שם המחשב שלי (כך ייראה ממחשבים אחרים)</label>
+                <div class="form-inline">
+                    <input type="text" id="set-my-name" placeholder="שם המחשב">
+                    <button class="btn-mini" onclick="saveMyName()">שמור</button>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label>תיקיית שמירת קבצים שהתקבלו</label>
+                <div class="form-inline">
+                    <input type="text" id="set-download-dir" placeholder="תיקיית הורדות" readonly>
+                    <button class="btn-mini" onclick="chooseDownloadDir()">בחר...</button>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label>נקודה חמה — שם רשת (SSID)</label>
+                <input type="text" id="set-ssid" placeholder="ברירת מחדל: YeshivaConnect">
+            </div>
+            <div class="form-row">
+                <label>נקודה חמה — סיסמה</label>
+                <input type="text" id="set-key" placeholder="ברירת מחדל: Yeshiva123">
+            </div>
+
+            <div class="toggle-row">
+                <span>מצב עיצוב בהיר</span>
+                <label class="switch"><input type="checkbox" id="set-theme" onchange="toggleThemeFromSwitch()"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+                <span>מחק קבצים שלא נשמרו בסגירת התוכנה</span>
+                <label class="switch"><input type="checkbox" id="set-delete-unsaved"><span class="slider"></span></label>
+            </div>
+
+            <div style="margin-top:22px; display:flex; gap:10px; justify-content:flex-end;">
+                <button class="btn-mini" onclick="closeModal('settings-modal')">ביטול</button>
+                <button class="btn-primary" onclick="saveSettings()">שמור הגדרות</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- מודאל נקודה חמה + QR -->
+    <div class="modal-overlay" id="hotspot-modal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal('hotspot-modal')">&times;</button>
+            <h2><i class="fa-solid fa-qrcode"></i> התחברות לנקודה החמה</h2>
+            <p style="color:var(--text-muted); font-size:14px; margin-top:-8px;">סרוק את הברקוד ממחשב אחר כדי להתחבר אוטומטית ולהוסיף אותי כאיש קשר.</p>
+            <div id="qr-canvas-wrap"><div id="qr-canvas"></div></div>
+            <div class="hotspot-detail">רשת (SSID): <b id="hs-ssid">-</b></div>
+            <div class="hotspot-detail">סיסמה: <b id="hs-key">-</b></div>
+            <div class="hotspot-detail">כתובת IP: <b id="hs-ip">-</b></div>
+            <div id="hs-inactive" style="display:none; color:#fcd34d; margin-top:10px; font-size:14px;">
+                <i class="fa-solid fa-triangle-exclamation"></i> הנקודה החמה אינה פעילה. לחץ "הפעל נקודה חמה" תחילה.
+            </div>
+        </div>
+    </div>
+
+    <!-- מודאל שיתוף בדפדפן -->
+    <div class="modal-overlay" id="webshare-modal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal('webshare-modal')">&times;</button>
+            <h2><i class="fa-solid fa-globe"></i> שיתוף קבצים בדפדפן</h2>
+            <p style="color:var(--text-muted); font-size:14px; margin-top:-8px;">
+                שתף קבצים עם חבר <b>ללא התוכנה</b>. הוא מתחבר לנקודה החמה שלך, נכנס לכתובת שמוצגת כאן בדפדפן, ומוריד את הקבצים. עובד לגמרי אופליין.
+            </p>
+
+            <div class="share-status-line" id="share-status-line">
+                <span class="dot off"></span> השיתוף כבוי
+            </div>
+
+            <div id="share-active-box" style="display:none;">
+                <div class="share-url-box">
+                    <span class="url" id="share-url">-</span>
+                    <button class="btn-mini" onclick="copyShareUrl()" title="העתק כתובת"><i class="fa-solid fa-copy"></i></button>
+                </div>
+                <p style="color:var(--text-muted); font-size:13px; margin:4px 0 0;">סרוק את הברקוד או הקלד את הכתובת בדפדפן של החבר:</p>
+                <div id="share-qr-wrap"><div id="share-qr"></div></div>
+            </div>
+
+            <div style="display:flex; gap:10px; margin:16px 0;">
+                <button class="btn-primary" id="share-toggle-btn" onclick="toggleWebShare()" style="flex:1;">הפעל שיתוף</button>
+                <button class="btn-mini" onclick="webShareAddFile()"><i class="fa-solid fa-file"></i> הוסף קבצים</button>
+                <button class="btn-mini" onclick="webShareAddFolder()"><i class="fa-solid fa-folder"></i> הוסף תיקייה</button>
+            </div>
+
+            <label style="display:block; margin-bottom:8px; font-size:14px; color:var(--text-muted); font-weight:600;">קבצים משותפים</label>
+            <div id="share-items"></div>
+
+            <div id="share-uploads-section" style="display:none; margin-top:18px;">
+                <label style="display:block; margin-bottom:8px; font-size:14px; color:var(--text-muted); font-weight:600;">
+                    <i class="fa-solid fa-inbox"></i> קבצים שהתקבלו מהדפדפן
+                </label>
+                <div id="share-uploads"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- מודאל מצלמה לסריקת ברקוד -->
+    <div class="modal-overlay" id="camera-modal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeCameraModal()">&times;</button>
+            <h2><i class="fa-solid fa-camera"></i> סריקת ברקוד</h2>
+            <p style="color:var(--text-muted); font-size:14px; margin-top:-8px;">כוון את המצלמה לברקוד של המחשב השני.</p>
+            <video id="camera-video" playsinline></video>
+            <canvas id="camera-canvas" style="display:none;"></canvas>
+            <div id="camera-status">מפעיל מצלמה...</div>
+            <div style="margin-top:16px; text-align:center;">
+                <button class="btn-mini" onclick="scanManualEntry()">הזנה ידנית של פרטי חיבור</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentChatId = null;
+        let currentChatIp = null;
+        let currentChatPort = null;
+
+        // --- פונקציות הנקראות מהפייתון (Eel) ---
+        eel.expose(update_network_status);
+        function update_network_status(status, type) {
+            const badge = document.getElementById('net-status');
+            badge.innerText = status;
+            badge.style.color = type === 'error' ? '#f87171' : (type === 'success' ? '#34d399' : '#fcd34d');
+        }
+
+        eel.expose(update_contacts_from_backend);
+        function update_contacts_from_backend(contacts) {
+            renderContacts(contacts);
+        }
+
+        eel.expose(refresh_chat_from_backend);
+        function refresh_chat_from_backend(history) {
+            renderChat(history);
+        }
+
+        eel.expose(update_transfer_status);
+        function update_transfer_status(text, percent) {
+            const container = document.getElementById('progress-container');
+            if (!text || percent >= 100) {
+                container.style.display = 'none';
+            } else {
+                container.style.display = 'block';
+                document.getElementById('progress-text').innerText = text;
+                document.getElementById('progress-bar').style.width = percent + '%';
+            }
+        }
+
+        eel.expose(update_my_name);
+        function update_my_name(name) {
+            const badge = document.getElementById('my-name-badge');
+            if (badge) {
+                badge.innerText = 'שם: ' + name;
+            }
+        }
+
+        eel.expose(show_notification);
+        function show_notification(title, msg) {
+            const x = document.getElementById("snackbar");
+            x.innerText = title + ": " + msg;
+            x.className = "show";
+            setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+        }
+
+        // --- פונקציות לוגיקה מקומית UI ---
+        function startHotspot() {
+            eel.start_network();
+            // מציג את מודאל ה-QR (יתעדכן כשהנקודה תופעל)
+            setTimeout(openHotspotModal, 1500);
+        }
+        function scanHotspotDevices() { eel.scan_hotspot_devices(); }
+        function refreshConnectedDevices() {
+            show_notification('רענון', 'סורק מכשירים מחוברים לנקודה החמה...');
+            eel.list_connected_devices();
+        }
+        function changeMyName() { eel.change_my_name()(update_my_name); }
+
+        // ------- מודאלים כלליים -------
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        // ------- הגדרות -------
+        let currentSettings = {};
+        function openSettingsModal() {
+            eel.get_settings()(function(s) {
+                currentSettings = s || {};
+                document.getElementById('set-my-name').value = document.getElementById('my-name-badge').innerText.replace('שם: ', '');
+                document.getElementById('set-download-dir').value = s.download_dir || '';
+                document.getElementById('set-ssid').value = s.hotspot_ssid || '';
+                document.getElementById('set-key').value = s.hotspot_key || '';
+                document.getElementById('set-theme').checked = (s.theme === 'light');
+                document.getElementById('set-delete-unsaved').checked = (s.delete_unsaved_on_close !== false);
+                document.getElementById('settings-modal').classList.add('active');
+            });
+        }
+
+        function saveSettings() {
+            const newSettings = {
+                download_dir: document.getElementById('set-download-dir').value,
+                hotspot_ssid: document.getElementById('set-ssid').value.trim(),
+                hotspot_key: document.getElementById('set-key').value.trim(),
+                theme: document.getElementById('set-theme').checked ? 'light' : 'dark',
+                delete_unsaved_on_close: document.getElementById('set-delete-unsaved').checked
+            };
+            eel.set_settings(newSettings)(function(saved) {
+                currentSettings = saved || newSettings;
+                applyTheme(currentSettings.theme);
+                show_notification('נשמר', 'ההגדרות עודכנו');
+                closeModal('settings-modal');
+            });
+        }
+
+        function saveMyName() {
+            const name = document.getElementById('set-my-name').value.trim();
+            if (!name) { show_notification('שגיאה', 'הכנס שם'); return; }
+            eel.set_my_name(name)(function(saved) { update_my_name(saved); });
+        }
+
+        function chooseDownloadDir() {
+            eel.choose_download_dir()(function(dir) {
+                if (dir) document.getElementById('set-download-dir').value = dir;
+            });
+        }
+
+        function toggleThemeFromSwitch() {
+            applyTheme(document.getElementById('set-theme').checked ? 'light' : 'dark');
+        }
+
+        function applyTheme(theme) {
+            if (theme === 'light') document.body.classList.add('light');
+            else document.body.classList.remove('light');
+        }
+
+        // ------- נקודה חמה + QR -------
+        function openHotspotModal() {
+            eel.get_hotspot_info()(function(info) {
+                if (!info) return;
+                document.getElementById('hs-ssid').innerText = info.ssid || '-';
+                document.getElementById('hs-key').innerText = info.key || '-';
+                document.getElementById('hs-ip').innerText = info.ip || '-';
+                document.getElementById('hs-inactive').style.display = info.active ? 'none' : 'block';
+
+                const wrap = document.getElementById('qr-canvas');
+                wrap.innerHTML = '';
+                if (typeof QRCode !== 'undefined' && info.qr) {
+                    new QRCode(wrap, { text: info.qr, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+                } else {
+                    wrap.innerHTML = '<div style="color:#333">לא ניתן לייצר ברקוד</div>';
+                }
+                document.getElementById('hotspot-modal').classList.add('active');
+            });
+        }
+
+        // ------- מצלמה לסריקת ברקוד -------
+        let cameraStream = null;
+        let scanRAF = null;
+
+        function openCameraModal() {
+            document.getElementById('camera-modal').classList.add('active');
+            document.getElementById('camera-status').innerText = 'מפעיל מצלמה...';
+            const video = document.getElementById('camera-video');
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then(function(stream) {
+                    cameraStream = stream;
+                    video.srcObject = stream;
+                    video.setAttribute('playsinline', true);
+                    video.play();
+                    document.getElementById('camera-status').innerText = 'סורק... כוון לברקוד';
+                    scanRAF = requestAnimationFrame(scanTick);
+                })
+                .catch(function(err) {
+                    document.getElementById('camera-status').innerText = 'לא ניתן לפתוח מצלמה: ' + err.message + '. נסה הזנה ידנית.';
+                });
+        }
+
+        function scanTick() {
+            const video = document.getElementById('camera-video');
+            if (!cameraStream) return;
+            if (video.readyState === video.HAVE_ENOUGH_DATA && typeof jsQR !== 'undefined') {
+                const canvas = document.getElementById('camera-canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+                if (code && code.data) {
+                    handleScannedCode(code.data);
+                    return;
+                }
+            }
+            scanRAF = requestAnimationFrame(scanTick);
+        }
+
+        function handleScannedCode(data) {
+            document.getElementById('camera-status').innerText = 'ברקוד זוהה! מתחבר...';
+            stopCamera();
+            eel.connect_from_qr(data)(function(ok) {
+                if (ok) {
+                    show_notification('הצלחה', 'מתחבר לנקודה החמה והמחשב נוסף');
+                    closeCameraModal();
+                } else {
+                    show_notification('שגיאה', 'ברקוד לא תקין');
+                    document.getElementById('camera-status').innerText = 'ברקוד לא תקין. נסה שוב.';
+                }
+            });
+        }
+
+        function scanManualEntry() {
+            const ip = prompt('כתובת IP של המחשב השני:');
+            if (!ip) return;
+            const name = prompt('שם המחשב:') || 'מחשב';
+            const port = prompt('פורט (ברירת מחדל 5050):') || '5050';
+            const ssid = prompt('שם רשת הנקודה החמה (SSID), או השאר ריק:') || '';
+            const key = ssid ? (prompt('סיסמת הרשת:') || '') : '';
+            const payload = JSON.stringify({ id: 'manual_' + ip, name: name, ip: ip, port: parseInt(port) || 5050, ssid: ssid, key: key });
+            eel.connect_from_qr(payload)(function(ok) {
+                if (ok) { show_notification('הצלחה', 'המחשב נוסף'); closeCameraModal(); }
+            });
+        }
+
+        function stopCamera() {
+            if (scanRAF) { cancelAnimationFrame(scanRAF); scanRAF = null; }
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(t => t.stop());
+                cameraStream = null;
+            }
+        }
+
+        function closeCameraModal() {
+            stopCamera();
+            closeModal('camera-modal');
+        }
+
+        function addManualContact() {
+            let name = prompt("הכנס שם מחשב (למשל: דני):");
+            if (!name) return;
+            let ip = prompt("הכנס כתובת IP:");
+            if (!ip) return;
+            eel.add_contact(name.trim(), ip.trim())(renderContacts);
+        }
+
+        function renameContact(contactId, currentName) {
+            let newName = prompt("הכנס שם חדש עבור " + currentName + ":", currentName);
+            if (!newName) return;
+            eel.rename_contact(contactId, newName.trim())(renderContacts);
+        }
+
+        function loadInitialData() {
+            eel.get_contacts()(renderContacts);
+            eel.get_my_name()(update_my_name);
+        }
+
+        function selectContact(id, name, ip, port) {
+            currentChatId = id;
+            currentChatIp = ip;
+            currentChatPort = port;
+            document.getElementById('chat-header').innerText = "שיחה עם: " + name;
+            
+            document.querySelectorAll('.contact-item').forEach(el => el.classList.remove('active'));
+            const activeItem = document.getElementById('contact-' + encodeURIComponent(id));
+            if (activeItem) activeItem.classList.add('active');
+
+            eel.select_contact(id, ip, port)(renderChat);
+        }
+
+        function escapeHtml(text) {
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function renderContacts(contacts) {
+            const list = document.getElementById('contact-list');
+            list.innerHTML = '';
+            contacts.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'contact-item' + (currentChatId === c.id ? ' active' : '');
+                div.id = 'contact-' + encodeURIComponent(c.id);
+
+                const nameEl = document.createElement('div');
+                nameEl.className = 'contact-name';
+                nameEl.innerText = c.name;
+
+                const ipEl = document.createElement('div');
+                ipEl.className = 'contact-ip';
+                ipEl.innerText = c.ip;
+
+                const actions = document.createElement('div');
+                actions.style.marginTop = '8px';
+                actions.style.display = 'flex';
+                actions.style.gap = '8px';
+
+                const openBtn = document.createElement('button');
+                openBtn.className = 'action-btn';
+                openBtn.style.width = 'auto';
+                openBtn.style.padding = '6px 10px';
+                openBtn.style.fontSize = '12px';
+                openBtn.innerText = 'פתח שיחה';
+                openBtn.onclick = () => selectContact(c.id, c.name, c.ip, c.port);
+
+                const renameBtn = document.createElement('button');
+                renameBtn.className = 'action-btn';
+                renameBtn.style.width = 'auto';
+                renameBtn.style.padding = '6px 10px';
+                renameBtn.style.fontSize = '12px';
+                renameBtn.innerText = 'שנה שם';
+                renameBtn.onclick = (event) => {
+                    event.stopPropagation();
+                    renameContact(c.id, c.name);
+                };
+
+                actions.appendChild(openBtn);
+                actions.appendChild(renameBtn);
+
+                div.appendChild(nameEl);
+                div.appendChild(ipEl);
+                div.appendChild(actions);
+                list.appendChild(div);
+            });
+        }
+
+        function renderChat(history) {
+            const chatBox = document.getElementById('chat-messages');
+            chatBox.innerHTML = '';
+            
+            history.forEach(msg => {
+                const row = document.createElement('div');
+                row.className = 'msg-row ' + (msg.is_outgoing ? 'outgoing' : 'incoming');
+
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+
+                const contentText = document.createElement('div');
+                contentText.style.whiteSpace = 'pre-wrap';
+
+                const displayTime = msg.time ? msg.time.substring(11, 16) : '';
+
+                if (msg.type === 'link') {
+                    const link = document.createElement('span');
+                    link.className = 'file-link';
+                    link.innerText = msg.content;
+                    link.onclick = () => eel.open_link(msg.content);
+                    contentText.appendChild(link);
+                } else if (msg.type === 'file' || msg.type === 'folder') {
+                    const filename = msg.content.split(/[/\\]/).pop();
+                    const icon = document.createElement('i');
+                    icon.className = 'fa-solid ' + (msg.type === 'folder' ? 'fa-folder' : 'fa-file-arrow-down');
+                    icon.style.fontSize = '24px';
+                    icon.style.marginBottom = '8px';
+                    icon.style.display = 'block';
+
+                    const fileLink = document.createElement('span');
+                    fileLink.className = 'file-link';
+                    fileLink.innerText = filename;
+                    fileLink.onclick = () => {
+                        if (msg.type === 'folder') {
+                            eel.open_folder(msg.content);
+                        } else {
+                            eel.open_file(msg.content);
+                        }
+                    };
+
+                    const folderBtn = document.createElement('span');
+                    folderBtn.className = 'folder-btn';
+                    folderBtn.innerHTML = '<i class="fa-solid fa-folder-open"></i> פתח מיקום';
+                    folderBtn.onclick = () => eel.open_folder(msg.content);
+
+                    contentText.appendChild(icon);
+                    contentText.appendChild(fileLink);
+                    contentText.appendChild(document.createElement('br'));
+                    contentText.appendChild(folderBtn);
+
+                    // כפתור שמירה לקבצים נכנסים שטרם נשמרו
+                    if (msg.saveable && !msg.saved) {
+                        const saveBtn = document.createElement('span');
+                        saveBtn.className = 'save-file-btn';
+                        saveBtn.innerHTML = '<i class="fa-solid fa-download"></i> שמור';
+                        saveBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            eel.save_received_file(msg.id)(function(ok) {
+                                if (ok) { eel.select_contact(currentChatId, currentChatIp, currentChatPort)(renderChat); }
+                            });
+                        };
+                        contentText.appendChild(saveBtn);
+                    } else if (msg.saveable && msg.saved) {
+                        const savedBadge = document.createElement('span');
+                        savedBadge.className = 'saved-badge';
+                        savedBadge.innerHTML = '<i class="fa-solid fa-check"></i> נשמר';
+                        contentText.appendChild(savedBadge);
+                    }
+                } else {
+                    contentText.innerText = msg.content;
+                }
+
+                const timeBadge = document.createElement('span');
+                timeBadge.className = 'time-badge';
+                timeBadge.innerText = displayTime;
+
+                bubble.appendChild(contentText);
+                bubble.appendChild(timeBadge);
+                row.appendChild(bubble);
+                chatBox.appendChild(row);
+            });
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function sendText() {
+            let input = document.getElementById('msg-input');
+            let text = input.value.trim();
+            if(text && currentChatId) {
+                eel.send_text(text)();
+                input.value = '';
+            } else if (!currentChatId) {
+                show_notification('שגיאה', 'אנא בחר איש קשר קודם');
+            }
+        }
+
+        function sendPing() {
+            if (!currentChatId) {
+                show_notification('שגיאה', 'אנא בחר איש קשר קודם');
+                return;
+            }
+            eel.send_ping()(function(success) {
+                if (success) {
+                    show_notification('נשלח', 'בקשת פינג נשלחה');
+                } else {
+                    show_notification('שגיאה', 'לא ניתן לשלוח פינג');
+                }
+            });
+        }
+
+        function handleEnter(e) {
+            if(e.key === 'Enter') sendText();
+        }
+
+        function openFilePicker() {
+            if (!currentChatId) {
+                show_notification('שגיאה', 'אנא בחר איש קשר קודם');
+                return;
+            }
+            const input = document.getElementById('file-input');
+            input.value = null;
+            input.onchange = handleFileInput;
+            input.click();
+        }
+
+        function openFolderPicker() {
+            if (!currentChatId) {
+                show_notification('שגיאה', 'אנא בחר איש קשר קודם');
+                return;
+            }
+            const input = document.getElementById('folder-input');
+            input.value = null;
+            input.onchange = handleFolderInput;
+            input.click();
+        }
+
+        async function handleFileInput(event) {
+            const files = Array.from(event.target.files || []);
+            if (!currentChatId) {
+                show_notification('שגיאה', 'אנא בחר איש קשר קודם');
+                return;
+            }
+            if (!files.length) {
+                return;
+            }
+            for (const file of files) {
+                await sendDroppedFile(file);
+            }
+        }
+
+        async function handleFolderInput(event) {
+            const files = Array.from(event.target.files || []);
+            if (!currentChatId) {
+                show_notification('שגיאה', 'אנא בחר איש קשר קודם');
+                return;
+            }
+            if (!files.length) {
+                return;
+            }
+            const folderFiles = files.map(file => ({ file, path: file.webkitRelativePath || file.name }));
+            await sendFolderAsZip(folderFiles);
+        }
+
+        function sendDroppedFile(file, displayName) {
+            const filename = displayName || file.name;
+            const reader = new FileReader();
+            reader.onload = function () {
+                const result = reader.result;
+                const commaIndex = result.indexOf(',');
+                const payload = commaIndex >= 0 ? result.slice(commaIndex + 1) : result;
+                eel.receive_dropped_file(currentChatId, filename, payload)(function(success) {
+                    if (!success) {
+                        show_notification('שגיאה', 'לא ניתן לשלוח את הקובץ.');
+                    }
+                });
+            };
+            reader.onerror = function () {
+                show_notification('שגיאה', 'קריאה של הקובץ שנכשלה.');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function sendFolderAsZip(files) {
+            if (typeof JSZip === 'undefined') {
+                show_notification('שגיאה', 'JSZip לא נטען, לא ניתן לשלוח תיקייה.');
+                return;
+            }
+            const zip = new JSZip();
+            for (const { file, path } of files) {
+                const normalizedPath = path.replace(/^\/+/,'');
+                zip.file(normalizedPath, file);
+            }
+            const rootName = files[0].path.split('/')[0] || 'folder';
+            const zipName = `${rootName}.zip`;
+            try {
+                const blob = await zip.generateAsync({ type: 'blob' });
+                await sendZipBlob(blob, zipName);
+            } catch (err) {
+                show_notification('שגיאה', 'שגיאת דחיסה של התיקייה.');
+            }
+        }
+
+        async function sendZipBlob(blob, filename) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function () {
+                    const result = reader.result;
+                    const commaIndex = result.indexOf(',');
+                    const payload = commaIndex >= 0 ? result.slice(commaIndex + 1) : result;
+                    eel.receive_dropped_file(currentChatId, filename, payload, 'folder')(function(success) {
+                        if (!success) {
+                            show_notification('שגיאה', 'לא ניתן לשלוח את ה-zip.');
+                            reject(new Error('receive_dropped_file failed'));
+                        } else {
+                            resolve();
+                        }
+                    });
+                };
+                reader.onerror = function () {
+                    show_notification('שגיאה', 'קריאה של הקובץ הזיפ שנכשלה.');
+                    reject(new Error('FileReader failed'));
+                };
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            document.getElementById('drop-hint').classList.remove('active');
+            if (!currentChatId) {
+                alert('אנא בחר איש קשר קודם');
+                return;
+            }
+
+            const items = Array.from(e.dataTransfer.items || []);
+            if (items.length > 0) {
+                const filePromises = [];
+                const files = [];
+
+                const readEntry = (entry, pathPrefix = '') => new Promise(resolve => {
+                    const entryPath = pathPrefix + entry.name;
+                    if (entry.isFile) {
+                        entry.file(file => {
+                            files.push({ file, path: entryPath });
+                            resolve();
+                        }, () => resolve());
+                    } else if (entry.isDirectory) {
+                        const reader = entry.createReader();
+                        const readBatch = () => {
+                            reader.readEntries(entries => {
+                                if (!entries.length) {
+                                    resolve();
+                                    return;
+                                }
+                                Promise.all(entries.map(child => readEntry(child, entryPath + '/'))).then(readBatch);
+                            }, () => resolve());
+                        };
+                        readBatch();
+                    } else {
+                        resolve();
+                    }
+                });
+
+                items.forEach(item => {
+                    const entry = item.getAsEntry ? item.getAsEntry() : item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+                    if (entry) {
+                        filePromises.push(readEntry(entry));
+                    } else if (item.kind === 'file') {
+                        const file = item.getAsFile();
+                        if (file) files.push({ file, path: file.webkitRelativePath || file.name });
+                    }
+                });
+
+                Promise.all(filePromises).then(async () => {
+                    if (files.length > 1 && files.some(f => f.path.includes('/'))) {
+                        await sendFolderAsZip(files);
+                    } else {
+                        files.forEach(({ file, path }) => sendDroppedFile(file, path));
+                    }
+                });
+                return;
+            }
+
+            const files = Array.from(e.dataTransfer.files || []);
+            if (files.length === 0) {
+                return;
+            }
+
+            files.forEach(file => sendDroppedFile(file));
+        }
+
+        document.addEventListener('dragenter', function(e) {
+            if (e.dataTransfer && e.dataTransfer.types.includes('Files')) {
+                document.getElementById('drop-hint').classList.add('active');
+            }
+        });
+        document.addEventListener('dragover', function(e) { e.preventDefault(); });
+        document.addEventListener('dragleave', function(e) {
+            if (!e.relatedTarget) {
+                document.getElementById('drop-hint').classList.remove('active');
+            }
+        });
+        document.addEventListener('drop', handleDrop);
+
+        // ------- שיתוף בדפדפן -------
+        function openWebShareModal() {
+            document.getElementById('webshare-modal').classList.add('active');
+            refreshWebShareUI();
+        }
+
+        function refreshWebShareUI() {
+            eel.web_share_status()(function(status) {
+                if (!status) return;
+                const running = status.running;
+                const url = status.url || '';
+                const items = status.items || [];
+
+                // עדכון מצב: פעיל/כבוי
+                const statusLine = document.getElementById('share-status-line');
+                const dot = statusLine.querySelector('.dot');
+                if (running) {
+                    dot.className = 'dot on';
+                    statusLine.innerHTML = '<span class="dot on"></span> השיתוף פעיל — חברים יכולים להוריד קבצים';
+                } else {
+                    dot.className = 'dot off';
+                    statusLine.innerHTML = '<span class="dot off"></span> השיתוף כבוי';
+                }
+
+                // כפתור הפעלה/כיבוי
+                const toggleBtn = document.getElementById('share-toggle-btn');
+                toggleBtn.innerText = running ? 'כבה שיתוף' : 'הפעל שיתוף';
+
+                // קופסת הכתובת + QR
+                const activeBox = document.getElementById('share-active-box');
+                if (running && url) {
+                    activeBox.style.display = 'block';
+                    document.getElementById('share-url').innerText = url;
+                    const qrWrap = document.getElementById('share-qr');
+                    qrWrap.innerHTML = '';
+                    if (typeof QRCode !== 'undefined') {
+                        new QRCode(qrWrap, { text: url, width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M });
+                    }
+                } else {
+                    activeBox.style.display = 'none';
+                }
+
+                // רשימת הקבצים המשותפים
+                const itemsDiv = document.getElementById('share-items');
+                if (!items.length) {
+                    itemsDiv.innerHTML = '<div class="share-empty">אין קבצים משותפים. לחץ "הוסף קבצים" או "הוסף תיקייה".</div>';
+                } else {
+                    itemsDiv.innerHTML = items.map(item => `
+                        <div class="share-item">
+                            <div>
+                                <div class="si-name">${escapeHtml(item.name)}</div>
+                                <div class="si-size">${item.size_h}</div>
+                            </div>
+                            <button class="si-remove" onclick="removeShareItem('${item.id}')" title="הסר"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    `).join('');
+                }
+
+                // קבצים שהתקבלו מהדפדפן (העלאות של החבר)
+                const uploads = status.uploads || [];
+                const uploadsSection = document.getElementById('share-uploads-section');
+                const uploadsDiv = document.getElementById('share-uploads');
+                if (uploads.length) {
+                    uploadsSection.style.display = 'block';
+                    uploadsDiv.innerHTML = uploads.map(up => `
+                        <div class="share-item">
+                            <div>
+                                <div class="si-name">${escapeHtml(up.name)}</div>
+                                <div class="si-size">${up.size_h}${up.time_str ? ' · ' + escapeHtml(up.time_str) : ''}</div>
+                            </div>
+                            <div style="display:flex; gap:6px; flex:none;">
+                                <button class="btn-mini" onclick="openUpload('${up.id}')" title="פתח"><i class="fa-solid fa-up-right-from-square"></i></button>
+                                <button class="btn-mini" onclick="locateUpload('${up.id}')" title="פתח מיקום"><i class="fa-solid fa-folder-open"></i></button>
+                                <button class="si-remove" onclick="removeUpload('${up.id}')" title="הסר"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    uploadsSection.style.display = 'none';
+                    uploadsDiv.innerHTML = '';
+                }
+            });
+        }
+
+        function toggleWebShare() {
+            eel.web_share_status()(function(status) {
+                if (status.running) {
+                    eel.web_share_stop()(refreshWebShareUI);
+                } else {
+                    eel.web_share_start()(refreshWebShareUI);
+                }
+            });
+        }
+
+        function webShareAddFile() {
+            eel.web_share_add_file()(refreshWebShareUI);
+        }
+
+        function webShareAddFolder() {
+            eel.web_share_add_folder()(refreshWebShareUI);
+        }
+
+        function removeShareItem(itemId) {
+            eel.web_share_remove(itemId)(refreshWebShareUI);
+        }
+
+        function openUpload(uploadId) {
+            eel.web_share_open_upload(uploadId)();
+        }
+
+        function locateUpload(uploadId) {
+            eel.web_share_locate_upload(uploadId)();
+        }
+
+        function removeUpload(uploadId) {
+            eel.web_share_remove_upload(uploadId, false)(refreshWebShareUI);
+        }
+
+        // נקרא מ-Python כשמתקבל קובץ מהדפדפן — מרענן את המודל אם הוא פתוח
+        eel.expose(web_share_refresh);
+        function web_share_refresh() {
+            const modal = document.getElementById('webshare-modal');
+            if (modal && modal.classList.contains('active')) {
+                refreshWebShareUI();
+            }
+        }
+
+        function copyShareUrl() {
+            const url = document.getElementById('share-url').innerText;
+            if (!url || url === '-') return;
+            navigator.clipboard.writeText(url).then(function() {
+                show_notification('הועתק', 'הכתובת הועתקה ללוח');
+            }).catch(function() {
+                show_notification('שגיאה', 'לא ניתן להעתיק');
+            });
+        }
+
+        // טעינה ראשונית
+        window.onload = function() {
+            eel.on_page_ready()();
+            loadInitialData();
+            eel.get_settings()(function(s) {
+                if (s) { currentSettings = s; applyTheme(s.theme); }
+            });
+        };
+    </script>
+</body>
+</html>

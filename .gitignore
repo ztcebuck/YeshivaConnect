@@ -1,0 +1,37 @@
+﻿# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Virtual Environments
+.venv/
+.venv*/
+env/
+venv/
+
+# Local runtime data
+local_chat.db
+my_identity.json
+settings.json
+Received_Files/
+Browser_Uploads/
+Saved_Files/
+test_chat.db
+
+# Junk folder
+זבל/
+זבל*/
+
+# IDE & Editor files
+.claude/
+.vscode/
+.idea/
+
+# Windows
+Thumbs.db
+Desktop.ini
