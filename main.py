@@ -987,6 +987,36 @@ if __name__ == "__main__":
     eel.expose(app.web_share_remove)
     eel.expose(app.web_share_open_upload)
     eel.expose(app.web_share_locate_upload)
-    eel.expose(app.web_share_remove_upload)
-    eel.start('index.html', size=(1280, 820), port=eel_port, host="127.0.0.1")
+    def _launch_eel():
+        modes = []
+        try:
+            import eel.chrome as chm
+            if chm.find_path():
+                modes.append('chrome')
+        except Exception:
+            pass
+        try:
+            import eel.edge as edge
+            if edge.find_path():
+                modes.append('edge')
+        except Exception:
+            pass
+        modes.extend(['default', False])
+
+        for mode in modes:
+            try:
+                if mode is False:
+                    webbrowser.open(f"http://127.0.0.1:{eel_port}/index.html")
+                    eel.start('index.html', mode=False, port=eel_port, host="127.0.0.1")
+                else:
+                    eel.start('index.html', size=(1280, 820), port=eel_port, host="127.0.0.1", mode=mode)
+                return
+            except (EnvironmentError, OSError) as exc:
+                print(f"[Eel] Browser mode '{mode}' unavailable: {exc}, trying next option...")
+                continue
+            except Exception as exc:
+                print(f"[Eel] Unexpected error with mode '{mode}': {exc}")
+                break
+
+    _launch_eel()
     app.on_close()
