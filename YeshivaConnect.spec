@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_all
 
-datas = [('web', 'web'), ('.venv\\Lib\\site-packages\\eel\\eel.js', 'eel')]
+datas = [('web', 'web')]
 binaries = []
 hiddenimports = ['bottle_websocket', 'gevent', 'geventwebsocket']
 tmp_ret = collect_all('eel')
