@@ -212,12 +212,11 @@ class SocketManager:
 
     def send_data(self, target_ip, msg_type, payload_data, sender_id, sender_name, metadata=None, port=None):
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client_socket.settimeout(2)
+        client_socket.settimeout(8)
         cleanup_archive = False
         try:
             target_port = port or self.port
             client_socket.connect((target_ip, target_port))
-            # ה-timeout של 2ש' נועד רק לחיבור; העברת קבצים גדולים יכולה להימשך זמן רב
             client_socket.settimeout(300)
 
             if msg_type in ('link', 'text'):

@@ -100,7 +100,7 @@
 
         /* תפריט צד (אנשי קשר) */
         .sidebar {
-            width: 310px; background: var(--sidebar-bg); backdrop-filter: blur(14px);
+            width: 310px; flex-shrink: 0; background: var(--sidebar-bg); backdrop-filter: blur(14px);
             border-inline-start: 1px solid var(--divider);
             box-shadow: var(--shadow-panel);
             display: flex; flex-direction: column; z-index: 5;
@@ -135,12 +135,12 @@
         .add-contact-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--hover-bg); }
 
         /* אזור הצ'אט */
-        .chat-area { flex: 1; display: flex; flex-direction: column; position: relative; }
+        .chat-area { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
         .chat-header {
             padding: 20px 30px; font-size: 20px; font-weight: 700;
             border-bottom: 1px solid var(--divider);
         }
-        .chat-messages { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .chat-messages { flex: 1; min-width: 0; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
 
         /* בועות צ'אט מודרניות */
         .msg-row { display: flex; width: 100%; }
@@ -150,6 +150,7 @@
         .bubble {
             max-width: 62%; padding: 12px 18px; border-radius: 18px; line-height: 1.5; position: relative; font-size: 15px;
             box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+            word-break: break-word; overflow-wrap: anywhere;
         }
         .outgoing .bubble { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-bottom-right-radius: 4px; }
         .incoming .bubble { background: var(--incoming-bubble); border: 1px solid var(--glass-border); color: var(--text-main); border-bottom-left-radius: 4px; }
@@ -558,13 +559,16 @@
                 if (!info) return;
                 document.getElementById('hs-ssid').innerText = info.ssid || '-';
                 document.getElementById('hs-key').innerText = info.key || '-';
-                document.getElementById('hs-ip').innerText = info.ip || '-';
+                document.getElementById('hs-ip').innerText = info.ip || 'ממתין לנקודה חמה...';
                 document.getElementById('hs-inactive').style.display = info.active ? 'none' : 'block';
 
                 const wrap = document.getElementById('qr-canvas');
                 wrap.innerHTML = '';
-                if (typeof QRCode !== 'undefined' && info.qr) {
-                    new QRCode(wrap, { text: info.qr, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+                const qrText = info.qr || '';
+                if (typeof QRCode !== 'undefined' && qrText) {
+                    new QRCode(wrap, { text: qrText, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+                } else if (!qrText) {
+                    wrap.innerHTML = '<div style="color:#333; padding:10px;">הפעל נקודה חמה כדי לקבל ברקוד</div>';
                 } else {
                     wrap.innerHTML = '<div style="color:#333">לא ניתן לייצר ברקוד</div>';
                 }
@@ -658,7 +662,10 @@
             if (!name) return;
             let ip = prompt("הכנס כתובת IP:");
             if (!ip) return;
-            eel.add_contact(name.trim(), ip.trim())(renderContacts);
+            let portRaw = prompt("פורט של התוכנה אצלו (אם לא ידוע, השאר ריק לברירת מחדל 5050):");
+            let port = parseInt(portRaw, 10);
+            if (!Number.isInteger(port) || port <= 0) port = null;
+            eel.add_contact(name.trim(), ip.trim(), port)(renderContacts);
         }
 
         function renameContact(contactId, currentName) {

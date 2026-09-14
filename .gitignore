@@ -1,4 +1,4 @@
-﻿# Byte-compiled / optimized / DLL files
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -26,6 +26,8 @@ test_chat.db
 # Junk folder
 זבל/
 זבל*/
+קבצים מתוקנים/
+קבצים מתוקנים*/
 
 # IDE & Editor files
 .claude/

@@ -356,7 +356,7 @@ class ChatApp:
         contact = self._find_contact(contact_id, contact_ip)
         if contact and isinstance(contact.get('port'), int) and contact['port'] > 0:
             return contact['port']
-        if isinstance(fallback_port, int) and fallback_port > 0 and fallback_port != self.port:
+        if isinstance(fallback_port, int) and fallback_port > 0:
             return fallback_port
         return 5050
 
@@ -375,11 +375,14 @@ class ChatApp:
         self._push_chat()
         return self.db.get_chat_history(contact_id)
 
-    def add_contact(self, name, ip):
+    def add_contact(self, name, ip, port=None):
         if not name or not ip:
             return self.db.get_contacts()
         tmp_id = f"manual_{ip}"
-        self.db.add_or_update_contact(tmp_id, name, ip, port=None)
+        # פורט תקין שהוזן ידנית גובר על ברירת המחדל (5050) שנקבעת ב-database_manager
+        # אם לא סופק פורט — זה מה שגרם בעבר לחיבור חד-כיווני כשהפורט האמיתי היה שונה
+        port_value = port if isinstance(port, int) and port > 0 else None
+        self.db.add_or_update_contact(tmp_id, name, ip, port=port_value)
         self._push_contacts()
         return self.db.get_contacts()
 
@@ -540,10 +543,11 @@ class ChatApp:
     def get_hotspot_info(self):
         """מחזיר את פרטי הנקודה החמה + זהות המחשב, ומחרוזת QR מוכנה לסריקה."""
         info = self.net.get_hotspot_info()
+        ip = info.get("ip")
         payload = {
             "id": self.my_id,
             "name": self.my_name,
-            "ip": info.get("ip"),
+            "ip": ip,
             "port": self.port,
             "ssid": info.get("ssid"),
             "key": info.get("key"),
@@ -551,10 +555,10 @@ class ChatApp:
         return {
             "ssid": payload["ssid"],
             "key": payload["key"],
-            "ip": payload["ip"],
+            "ip": ip,
             "port": self.port,
             "active": info.get("active", False),
-            "qr": QR_PREFIX + json.dumps(payload, ensure_ascii=False),
+            "qr": (QR_PREFIX + json.dumps(payload, ensure_ascii=False)) if ip else None,
         }
 
     def connect_from_qr(self, payload):
